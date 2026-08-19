@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B1021"/>
+      <stop offset="100%" stop-color="#16203B"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#bg)" stroke="#00D9C0" stroke-width="1.5"/>
+  <g filter="url(#glow)">
+    <rect x="6.5" y="6.5" width="8" height="8" rx="2.5" fill="#00D9C0"/>
+    <rect x="17.5" y="6.5" width="8" height="8" rx="2.5" fill="#38EF7D"/>
+    <rect x="6.5" y="17.5" width="8" height="8" rx="2.5" fill="#FFB86B"/>
+    <rect x="17.5" y="17.5" width="8" height="8" rx="2.5" fill="#00D9C0"/>
+  </g>
+</svg>
