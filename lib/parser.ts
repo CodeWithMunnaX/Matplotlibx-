@@ -78,6 +78,37 @@ export function evaluatePythonExpr(
     return items.map((item) => evaluatePythonExpr(item, vars));
   }
 
+  // len(obj)
+  const lenMatch = clean.match(/^len\((.*)\)$/);
+  if (lenMatch) {
+    const target = evaluatePythonExpr(lenMatch[1], vars);
+    if (Array.isArray(target) || typeof target === "string") {
+      return target.length;
+    }
+    return 0;
+  }
+
+  // range(stop) or range(start, stop, step)
+  const rangeMatch = clean.match(/^range\((.*)\)$/);
+  if (rangeMatch) {
+    const args = splitArgs(rangeMatch[1]);
+    if (args.length === 1) {
+      const stop = evaluatePythonExpr(args[0], vars) ?? 0;
+      return np.arange(stop);
+    }
+    const start = evaluatePythonExpr(args[0], vars) ?? 0;
+    const stop = evaluatePythonExpr(args[1], vars) ?? 0;
+    const step = args[2] ? evaluatePythonExpr(args[2], vars) : 1;
+    return np.arange(start, stop, step);
+  }
+
+  // np.array([...])
+  const arrayMatch = clean.match(/^np\.(?:array)\((.*)\)$/);
+  if (arrayMatch) {
+    const arg = evaluatePythonExpr(arrayMatch[1], vars);
+    return Array.isArray(arg) ? arg : [arg];
+  }
+
   // np.pi
   if (clean === "np.pi" || clean === "numpy.pi") return Math.PI;
 
@@ -117,8 +148,8 @@ export function evaluatePythonExpr(
     if (fn === "sqrt") return np.sqrt(val);
   }
 
-  // np.random.randn(n), np.random.rand(n), np.random.randint(low, high, size), np.random.normal(loc, scale, size)
-  const randMatch = clean.match(/^np\.random\.(randn|rand|randint|normal|seed)\((.*)\)$/);
+  // np.random.randn, np.random.rand, np.random.randint, np.random.normal, np.random.uniform
+  const randMatch = clean.match(/^np\.random\.(randn|rand|randint|normal|uniform|seed)\((.*)\)$/);
   if (randMatch) {
     const fn = randMatch[1];
     const args = splitArgs(randMatch[2]);
@@ -143,6 +174,12 @@ export function evaluatePythonExpr(
       const scale = evaluatePythonExpr(args[1], vars) ?? 1;
       const size = args[2] ? evaluatePythonExpr(args[2], vars) : 100;
       return np.random.normal(loc, scale, size);
+    }
+    if (fn === "uniform") {
+      const low = evaluatePythonExpr(args[0], vars) ?? 0;
+      const high = evaluatePythonExpr(args[1], vars) ?? 1;
+      const size = args[2] ? evaluatePythonExpr(args[2], vars) : 10;
+      return Array.from({ length: size }, () => Math.random() * (high - low) + low);
     }
   }
 
@@ -753,10 +790,11 @@ export function parsePythonMatplotlib(code: string): ParseResult {
           continue;
         }
 
-        // C. BAR CHART: bar(x, height) / barh(y, width)
+        // C. BAR CHART: bar(x, height, width=...) / barh(y, width, height=...)
         if (method === "bar" || method === "barh") {
           const cats = positional[0] || [];
           const vals = positional[1] || [];
+          const posWidth = typeof positional[2] === "number" ? positional[2] : (typeof positional[2] === "string" && !isNaN(Number(positional[2])) ? Number(positional[2]) : undefined);
           const defaultCol = DEFAULT_COLORS[colorIndex % DEFAULT_COLORS.length];
           colorIndex++;
 
@@ -764,7 +802,7 @@ export function parsePythonMatplotlib(code: string): ParseResult {
             type: method === "barh" ? "barh" : "bar",
             categories: Array.isArray(cats) ? cats : [],
             values: Array.isArray(vals) ? vals : [],
-            width: kwargs.width ?? 0.6,
+            width: kwargs.width ?? posWidth ?? 0.6,
             color: kwargs.color ?? defaultCol,
             bottom: kwargs.bottom,
             left: kwargs.left,

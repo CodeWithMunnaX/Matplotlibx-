@@ -235,15 +235,21 @@ function SingleAxesRenderer({ axes, gridOverride, onHover, onLeave }: SingleAxes
       const cats = el.categories || [];
       hasData = true;
       if (el.type === "bar") {
-        minX = 0;
-        maxX = Math.max(1, cats.length);
-        minY = Math.min(0, ...vals);
-        maxY = Math.max(1, ...vals);
+        const numCats = cats.filter((c: any) => typeof c === "number");
+        if (numCats.length > 0) {
+          minX = Math.min(isFinite(minX) ? minX : Infinity, Math.min(...numCats) - 0.6);
+          maxX = Math.max(isFinite(maxX) ? maxX : -Infinity, Math.max(...numCats) + 0.6);
+        } else {
+          minX = Math.min(isFinite(minX) ? minX : 0, 0);
+          maxX = Math.max(isFinite(maxX) ? maxX : 1, cats.length);
+        }
+        minY = Math.min(isFinite(minY) ? minY : 0, 0, ...vals);
+        maxY = Math.max(isFinite(maxY) ? maxY : 1, 1, ...vals);
       } else {
-        minX = Math.min(0, ...vals);
-        maxX = Math.max(1, ...vals);
-        minY = 0;
-        maxY = Math.max(1, cats.length);
+        minX = Math.min(isFinite(minX) ? minX : 0, 0, ...vals);
+        maxX = Math.max(isFinite(maxX) ? maxX : 1, 1, ...vals);
+        minY = Math.min(isFinite(minY) ? minY : 0, 0);
+        maxY = Math.max(isFinite(maxY) ? maxY : 1, cats.length);
       }
     } else if (el.type === "hist") {
       hasData = true;
@@ -492,25 +498,31 @@ function SingleAxesRenderer({ axes, gridOverride, onHover, onLeave }: SingleAxes
             if (el.type === "bar") {
               const cats = el.categories;
               const vals = el.values;
-              const colWidth = (plotW / cats.length) * (el.width || 0.6);
+              const isNumericCats = cats.length > 0 && typeof cats[0] === "number";
+              const barWidthUnits = el.width || 0.6;
+              const barWidthPx = isNumericCats
+                ? Math.max(6, (plotW / Math.max(1, spanX)) * barWidthUnits)
+                : (plotW / Math.max(1, cats.length)) * barWidthUnits;
 
               return (
                 <g key={`bar-${elIdx}`}>
                   {vals.map((v, i) => {
-                    const centerPx = padL + ((i + 0.5) / cats.length) * plotW;
-                    const x = centerPx - colWidth / 2;
+                    const centerPx = isNumericCats
+                      ? toPx(Number(cats[i]))
+                      : padL + ((i + 0.5) / cats.length) * plotW;
+                    const x = centerPx - barWidthPx / 2;
                     const y0 = toPy(el.bottom ? el.bottom[i] || 0 : 0);
                     const y1 = toPy(v + (el.bottom ? el.bottom[i] || 0 : 0));
                     const barY = Math.min(y0, y1);
-                    const barH = Math.abs(y0 - y1);
-                    const color = Array.isArray(el.color) ? el.color[i] : el.color || "#6366F1";
+                    const barH = Math.max(2, Math.abs(y0 - y1));
+                    const color = Array.isArray(el.color) ? el.color[i] : el.color || "#EC4899";
 
                     return (
                       <rect
                         key={`b-${i}`}
                         x={x}
                         y={barY}
-                        width={colWidth}
+                        width={barWidthPx}
                         height={barH}
                         fill={color}
                         stroke={el.edgecolor || "none"}

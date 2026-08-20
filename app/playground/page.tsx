@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { PLAYGROUND_TEMPLATES, PlaygroundTemplate } from "@/data/templates";
 import { generateExplanation, FullExplanation } from "@/lib/explanationEngine";
 import CodeEditor from "@/components/CodeEditor";
@@ -15,6 +16,7 @@ import ColormapExplorer from "@/components/ColormapExplorer";
 import Plot3DStudio from "@/components/Plot3DStudio";
 import SubplotLayoutBuilder from "@/components/SubplotLayoutBuilder";
 import MatplotlibAnatomy from "@/components/MatplotlibAnatomy";
+import RealWorldDataSwitcher from "@/components/RealWorldDataSwitcher";
 import {
   Terminal,
   Sparkles,
@@ -34,9 +36,10 @@ import {
   CheckCircle2,
   Flame,
   HelpCircle,
+  Database,
 } from "lucide-react";
 
-// Fast Quick Chart Presets with Direct Code Mappings (Pink + Emerald Accents)
+// Fast Quick Chart Presets with Direct Code Mappings
 const QUICK_CHART_PRESETS = [
   {
     id: "p-line",
@@ -145,7 +148,10 @@ const QUICK_CHART_PRESETS = [
   },
 ];
 
-export default function PlaygroundPage() {
+function PlaygroundContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
   const [activeMode, setActiveMode] = useState<
     "editor" | "guide" | "studio" | "colormaps" | "3d" | "subplots" | "anatomy"
   >("editor");
@@ -153,6 +159,24 @@ export default function PlaygroundPage() {
   const [code, setCode] = useState<string>(QUICK_CHART_PRESETS[0].code);
   const [explanation, setExplanation] = useState<FullExplanation | null>(null);
   const [isRunning, setIsRunning] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (tabParam === "guide") {
+      setActiveMode("guide");
+    } else if (tabParam === "studio") {
+      setActiveMode("studio");
+    } else if (tabParam === "3d") {
+      setActiveMode("3d");
+    } else if (tabParam === "colormaps") {
+      setActiveMode("colormaps");
+    } else if (tabParam === "subplots") {
+      setActiveMode("subplots");
+    } else if (tabParam === "anatomy") {
+      setActiveMode("anatomy");
+    } else {
+      setActiveMode("editor");
+    }
+  }, [tabParam]);
 
   useEffect(() => {
     const initialExp = generateExplanation(QUICK_CHART_PRESETS[0].code);
@@ -188,15 +212,15 @@ export default function PlaygroundPage() {
               Free Plotting & Visualization Lab
             </h1>
             <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-sans max-w-2xl leading-relaxed">
-              Explore 15+ chart types with 1-click presets, study the master chart decision matrix, or visually build multi-panel figure subplots.
+              <strong>Code Lab:</strong> Write Python code & see live vector graphs. • <strong>Decision Guide:</strong> Matrix explaining when to use which chart.
             </p>
           </div>
 
           {/* Mode Switcher Tabs */}
           <div className="flex flex-wrap rounded-2xl bg-pink-50/70 dark:bg-[#151022] p-1.5 border border-pink-200/60 dark:border-[#2D2248] font-mono text-xs gap-1 self-start md:self-auto">
             {[
-              { id: "editor", label: "Code Lab", icon: Code2 },
-              { id: "guide", label: "Decision Guide", icon: HelpCircle },
+              { id: "editor", label: "Code Lab (IDE)", icon: Code2 },
+              { id: "guide", label: "Chart Decision Guide", icon: HelpCircle },
               { id: "studio", label: "Chart Studio", icon: Sliders },
               { id: "colormaps", label: "Colormaps", icon: Palette },
               { id: "3d", label: "3D Studio", icon: Box },
@@ -209,7 +233,7 @@ export default function PlaygroundPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveMode(tab.id as any)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold transition-all ${
                     isActive
                       ? "bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-pink-sm"
                       : "text-zinc-600 dark:text-zinc-400 hover:text-pink-600 dark:hover:text-pink-300"
@@ -246,14 +270,11 @@ export default function PlaygroundPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setActiveMode("guide")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-xs font-mono font-bold text-emerald-800 dark:text-emerald-300 transition-all"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-xs font-mono font-bold text-emerald-800 dark:text-emerald-300 transition-all"
                   >
                     <HelpCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>When to Use Which Chart?</span>
+                    <span>When to Use Which Chart? (Decision Guide)</span>
                   </button>
-                  <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-pink-50 dark:bg-pink-500/10 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-500/30 font-bold">
-                    15 Presets
-                  </span>
                 </div>
               </div>
 
@@ -289,6 +310,14 @@ export default function PlaygroundPage() {
                   isRunning={isRunning}
                   height="360px"
                   title="Playground Python IDE • Edit & Run"
+                />
+
+                {/* Real World Datasets Switcher */}
+                <RealWorldDataSwitcher
+                  onSelectDataset={(dsCode) => {
+                    setCode(dsCode);
+                    handleRunCode(dsCode);
+                  }}
                 />
 
                 <OutputPanel explanation={explanation} />
@@ -357,5 +386,19 @@ export default function PlaygroundPage() {
         {activeMode === "anatomy" && <MatplotlibAnatomy />}
       </div>
     </div>
+  );
+}
+
+export default function PlaygroundPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center font-mono text-xs text-zinc-500">
+          Loading Laboratory Suite...
+        </div>
+      }
+    >
+      <PlaygroundContent />
+    </Suspense>
   );
 }
