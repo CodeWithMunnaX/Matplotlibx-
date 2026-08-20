@@ -8,6 +8,12 @@ import Hero from "@/components/Hero";
 import LessonCard from "@/components/LessonCard";
 import MatplotlibAnatomy from "@/components/MatplotlibAnatomy";
 import ProgressBar from "@/components/ProgressBar";
+import LessonVideoModal, {
+  OFFICIAL_YOUTUBE_URL,
+  OFFICIAL_YOUTUBE_THUMBNAIL,
+  OFFICIAL_YOUTUBE_THUMBNAIL_FALLBACK,
+  YouTubeIcon,
+} from "@/components/LessonVideoModal";
 import {
   Sparkles,
   BookOpen,
@@ -24,12 +30,15 @@ import {
   Sliders,
   Play,
   Grid,
+  ExternalLink,
 } from "lucide-react";
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedTrack, setSelectedTrack] = useState<string>("All");
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [thumbSrc, setThumbSrc] = useState(OFFICIAL_YOUTUBE_THUMBNAIL);
 
   useEffect(() => {
     const prog = getProgress();
@@ -104,12 +113,81 @@ export default function HomePage() {
           <ProgressBar completedCount={completedCount} totalCount={totalLessons} />
         </section>
 
-        {/* 3. INTERACTIVE MATPLOTLIB ANATOMY SECTION */}
+        {/* 3. FEATURED OFFICIAL YOUTUBE VIDEO BANNER */}
+        <section className="bg-white dark:bg-[#1C152D] rounded-3xl p-6 sm:p-8 border border-pink-100 dark:border-[#2D2248] shadow-card overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Left Info (6 cols) */}
+            <div className="lg:col-span-6 space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-xs font-mono font-bold text-red-600 dark:text-red-400">
+                <YouTubeIcon className="w-3.5 h-3.5 fill-current" />
+                <span>Official Matplotlib Video Tutorial</span>
+              </div>
+
+              <h3 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-[#FDF2F8] font-sans">
+                Watch Full Masterclass by Munna Kumar
+              </h3>
+
+              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-sans">
+                Prefer video learning? Watch the complete Matplotlib breakdown in Hindi & English on <strong>@CodeWithMunnaX</strong>. Follow along with interactive practice challenges in this platform!
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <button
+                  onClick={() => setIsVideoModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-mono text-xs font-bold shadow-md shadow-red-500/25 transition-all hover:scale-105"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Play Video in App</span>
+                </button>
+
+                <a
+                  href={OFFICIAL_YOUTUBE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white dark:bg-[#151022] border border-pink-200 dark:border-[#2D2248] text-zinc-800 dark:text-[#FDF2F8] hover:bg-pink-50 dark:hover:bg-[#241B3B] font-mono text-xs font-bold transition-all hover:scale-105"
+                >
+                  <YouTubeIcon className="w-3.5 h-3.5 text-red-600 fill-current" />
+                  <span>Open on YouTube</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+                </a>
+              </div>
+            </div>
+
+            {/* Right Video Thumbnail (6 cols) */}
+            <div className="lg:col-span-6">
+              <div
+                onClick={() => setIsVideoModalOpen(true)}
+                className="relative w-full aspect-video rounded-2xl overflow-hidden cursor-pointer group shadow-lg border border-pink-100 dark:border-[#2D2248]"
+              >
+                <img
+                  src={thumbSrc}
+                  onError={() => setThumbSrc(OFFICIAL_YOUTUBE_THUMBNAIL_FALLBACK)}
+                  alt="Official Matplotlib Video by Munna Kumar (@CodeWithMunnaX)"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-95"
+                />
+
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                {/* Glowing Play Overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                  <div className="w-16 h-16 rounded-2xl bg-red-600/95 group-hover:bg-red-600 text-white flex items-center justify-center shadow-[0_0_30px_rgba(239,68,68,0.6)] group-hover:scale-110 transition-all">
+                    <Play className="w-7 h-7 fill-current ml-1" />
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-white text-[11px] font-mono font-bold">
+                    Watch Masterclass Video
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 4. INTERACTIVE MATPLOTLIB ANATOMY SECTION */}
         <section id="anatomy" className="scroll-mt-20">
           <MatplotlibAnatomy />
         </section>
 
-        {/* 4. LESSONS CATALOG & SEARCH */}
+        {/* 5. LESSONS CATALOG & SEARCH */}
         <section className="space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -163,7 +241,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 5. PLAYGROUND & LABS CALLOUT BANNER */}
+        {/* 6. PLAYGROUND & LABS CALLOUT BANNER */}
         <section className="p-8 rounded-3xl bg-gradient-to-r from-pink-900/10 via-rose-900/10 to-emerald-900/10 dark:from-[#1C152D] dark:to-[#151022] border border-pink-200 dark:border-[#2D2248] shadow-card flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           <div className="space-y-2">
             <h3 className="text-xl font-black text-zinc-900 dark:text-[#FDF2F8] font-sans">
@@ -184,6 +262,11 @@ export default function HomePage() {
           </Link>
         </section>
       </main>
+
+      {/* Video Tutorial Modal */}
+      {isVideoModalOpen && (
+        <LessonVideoModal onClose={() => setIsVideoModalOpen(false)} />
+      )}
     </div>
   );
 }
